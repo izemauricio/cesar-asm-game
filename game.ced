@@ -1,0 +1,1112 @@
+
+
+;==========================================================================
+;
+;	Modelo para o desenvolvimento do trabalho do CESAR
+;
+;	Autores: Sergio Cechin & Carlos Lisboa
+;
+;	0000 - 7FFF: PROGRAMA PRINCIPAL
+;	8000 - 80FF: COMUNICACAO PP E INT
+;	8100 - 81FF: INICIALIZACAO DE INTERRUPCAO
+;	8200 - FF7F: TRATADOR DE INTERRUPCAO
+;	FF80 - FFFF: PERIFERICOS
+;
+;==========================================================================
+
+;==========================================================================
+;	FF80 - FFFF: PERIFERICOS
+;==========================================================================
+org	HFF80
+org	HFFBE
+
+; Acesso em 16 bits
+IVET:	dw	0
+
+; Acesso em 8 bits
+org	hffc0
+dab	[24]
+INTS:	db	0						; Bits do INTERRUPT STATUS: IP x x x x x IPStec IPStim
+INTE:	db	0						; Bits do INTERRUPT ENABLE: IE x x x x x IEStec IEStim
+TECST:	db	0						; Status do teclado
+TECDT:	db	0						; Dado do teclado
+VISOR:	dab	[36]					; Portas de acesso ao visor
+
+STACK:	equ	H8000					; Stack region
+;==========================================================================
+;	0000 - 7FFF: MAIN PROGRAM, SUBROTINAS, VARIAVEIS, STACK
+;==========================================================================
+org	H0000
+
+
+
+
+
+
+
+
+									; INITIAL CESAR SETUP
+MOV #STACK, R6 						; Set stack addr
+mov #131, INTE 						; Turn on interruptions #131 = 10000011
+mov #-1, TECLA 						; Clear keyboard buffer
+jsr r7, H8100 						; Call interruption initial setup subrotine
+mov #1901, random_seed 				; Feed the seed
+
+
+
+; TESTE
+
+
+; FIM TESTE
+
+
+
+mov #MIRA,r1
+mov #0, 0(r1) ; estado
+mov #0, 2(r1) ; posicao atual
+mov #0, 4(r1) ; nova posicao
+mov #ASTEROIDES,r1
+mov #0, 8(r1) ; tamanho
+mov #0, 6(r1) ; tipo
+mov #0, 4(r1) ; nova posicao
+mov #0, 2(r1) ; posicao atual
+mov #0, 0(r1) ; estado
+add #10,r1
+mov #0, 8(r1) ; tamanho
+mov #0, 6(r1) ; tipo
+mov #0, 4(r1) ; nova posicao
+mov #0, 2(r1) ; posicao atual
+mov #0, 0(r1) ; estado
+add #10,r1
+mov #0, 8(r1) ; tamanho
+mov #0, 6(r1) ; tipo
+mov #0, 4(r1) ; nova posicao
+mov #0, 2(r1) ; posicao atual
+mov #0, 0(r1) ; estado
+
+
+
+
+INICIO_DE_TUDO:
+
+MOV #msg0, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 		; Call to print r0 string on r1 led
+
+jsr r7,espera_enter					; Wait for ENTER
+
+MOV #msg1, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 		; Call to print r0 string on r1 led
+
+mov #-1, TECLA 						; limpa tecla armazenada
+
+
+
+nenhuma_tecla: 						; enquanto tecla for -1, fica em loop
+tst TECLA
+bmi nenhuma_tecla
+
+cmp TECLA, #'T'
+beq _S_FIM
+
+cmp TECLA, #'I'
+beq _S_SIMULACAO_START
+
+tecla_invalida:
+mov TECLA, 65535
+mov #-1, TECLA
+br  nenhuma_tecla
+
+
+
+
+_S_FIM: 							; fim do programa por causa da tecla
+MOV #msg2, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+hlt
+
+
+
+_S_FIM_POR_TEMPO: 					; fim do programa por fim do tempo
+
+; ERASE ALL ASTEROIDES & MIRA
+jsr r7, APAGADOR 						; ** APAGAR ASTEROIDES E MIRA
+
+; ERASE ALL VISOR
+MOV #msg4, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+
+; ERASE ALL VISOR
+MOV #msg4, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+
+; ERASE ALL VISOR
+MOV #msg4, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+
+; DRAW PONTUACAO MENSAGE
+MOV #msg3, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+
+; DRAW PONTOS
+mov PONTO_CEN, 65518				; Imprime os pontos
+mov PONTO_DEC, 65519
+mov PONTO_UNI, 65520
+
+; ESPERA ENTER
+jsr r7,espera_enter
+
+jmp INICIO_DE_TUDO
+
+; ***************************************************
+
+_S_SIMULACAO_START: ; inicia simulacao, setup inicial
+
+; APAGA TUDO
+MOV #msg4, R0       				; Set string message
+MOV #0, R1          				; Set led index (0 to 35)
+JSR r7, _S_ESCREVER_NO_VISOR 
+
+; INICIALIZA VARIAVEIS & STRUCTURES
+mov #-1, TECLA
+mov #0, TIMER
+mov #'0', PONTO_CEN
+mov #'0', PONTO_DEC
+mov #'0', PONTO_UNI
+mov #'0', TEMPO_DEC
+mov #'0', TEMPO_UNI
+
+; ATIVA MIRA
+mov #MIRA,r1
+mov #1, 0(r1) ; estado
+mov #0, 2(r1) ; posicao atual
+mov #0, 4(r1) ; nova posicao
+
+; ***** STEP 2:
+_S_SIMULACAO:
+
+; KEYBOARD MUDOU?
+mov #-1, TECLA 		
+
+TECLA_VERIFICATION: 	
+	; TIMER MUDOU?
+	cmp TIMER,#0
+	bne TEMPO_TIC_TAC
+tst TECLA
+bmi TECLA_VERIFICATION	; ENQUANTO TECLA == -1, FICA EM LOOP
+
+cmp TECLA, #' '
+beq TECLA_ESP_ROTINA
+
+cmp TECLA, #'P'
+beq TECLA_P_ROTINA 		
+
+cmp TECLA, #'A'
+beq TECLA_A_ROTINA
+
+cmp TECLA, #'D'
+beq TECLA_D_ROTINA
+
+mov #-1, TECLA
+
+br _S_SIMULACAO ; REPETE O LOOP DA ANIMACAO
+
+
+
+
+
+TECLA_P_ROTINA:
+jmp _S_FIM_POR_TEMPO
+
+
+TECLA_A_ROTINA:
+mov #MIRA,r1
+mov #2, 0(r1) ; estado
+mov 2(r1), r4 ; r4 = posicao atual
+cmp r4,#0
+beq NAO_INC2
+dec r4
+NAO_INC2:
+mov r4, 4(r1) ; nova posicao = r4
+br _S_SIMULACAO
+
+
+TECLA_D_ROTINA:
+mov #MIRA,r1
+mov #2, 0(r1) ; estado
+mov 2(r1), r4 ; r4 = posicao atual
+cmp r4,#26
+beq NAO_INC
+inc r4
+NAO_INC:
+mov r4, 4(r1) ; nova posicao = r4
+br _S_SIMULACAO
+
+
+TECLA_ESP_ROTINA:
+jmp ROTINA_DO_ESPACO
+br _S_SIMULACAO
+
+
+
+
+
+
+; ROTINA DO TIMER ***
+
+TEMPO_TIC_TAC: ; TIMER MUDOU? SIM!
+clr TIMER 				; zera timer
+
+; incrementa tempo
+inc TEMPO_UNI 			
+cmp TEMPO_UNI, #':'
+beq TEMPO_DEC_TIC 		; verifica se deve incrementar dezena
+; FIM INCREMENTO DEZENA
+TEMPO_DEC_TIC_ELSE: 
+; VERIFICA SE DEVE CRIAR ASTEROIDE
+	; funcao random e salva em r5
+	mov R0,-(R6)
+	clr r0
+	JSR	R7,random
+	mov r0,r5
+	mov (R6)+,R0 
+and #4,r5 ; mascara no bit para saber se cria ou nao cria asteroide
+tst r5
+beq CRIAR_ASTEROIDE
+
+; FIM DA CRIACAO DO ASTEROIDE
+CRIAR_ASTEROIDE_ELSE: 
+JSR r7, _S_DESENHA_PONTOS ; desenha
+jmp _S_SIMULACAO ; volta ao loop
+
+
+
+
+
+
+; ACABOU O TEMPO
+_S_FIM_POR_TEMPO_SHORTCUT:
+jmp _S_FIM_POR_TEMPO
+
+
+
+
+; INCREMENTA DEZENA
+TEMPO_DEC_TIC: 
+inc TEMPO_DEC
+mov #'0',TEMPO_UNI
+; VERIFICA SE TERMINOU SIMULACAO
+cmp TEMPO_DEC,#'6' ; verifica se dec == 6
+beq _S_FIM_POR_TEMPO_SHORTCUT ; se sim, termina jogo
+br TEMPO_DEC_TIC_ELSE
+
+
+
+
+
+
+CRIAR_ASTEROIDE:
+; EXISTE ASTEROIDE COM ESTADO 0?
+LOOP_ASTEROIDE_INIT:
+mov #ASTEROIDES, r1                 ; r1 = estrutura asteroides[3]
+mov #3, r2                          ; repete loop 3 vezes
+
+LOOP_ASTEROIDE_LOOP:
+mov 0(r1), r0                       ; r0 = estado do asteroide
+cmp r0, #0
+beq ASTEROIDE_LIVRE                 ; jmp if estado == 0
+jmp TEST_LOOP  
+
+TEST_LOOP: 
+sob r2, LOOP_ASTER_SHORT      ; repete loop ou sai fora
+jmp CRIAR_ASTEROIDE_ELSE
+
+LOOP_ASTER_SHORT:   
+add #10,r1                    ; avanca 10 bytes em r1 para alcancar a proxima estrutura asteroides
+jmp LOOP_ASTEROIDE_LOOP
+
+
+
+ASTEROIDE_LIVRE:
+
+	; funcao random e salva em r5
+	mov R0,-(R6)
+	clr r0
+	JSR	R7,random
+	mov r0,r5
+	mov (R6)+,R0 
+and #3,r5 ; 2 bits significativos
+mov r5, 6(r1) ; tipo
+inc r5
+mov r5, 8(r1) ; tamanho
+mov #29,4(r1) ; nova posicao
+mov #0, 2(r1) ; posicao atual
+mov #1, 0(r1) ; ativa asteroide setando status=1
+
+jmp CRIAR_ASTEROIDE_ELSE
+;
+; *****************************************************
+; *****************************************************
+; ** Aqui termina o programa para implementar o jogo **
+; *****************************************************
+; *****************************************************
+;
+
+
+; MY ROTINES
+
+; DESENHA PONTUACAO E TEMPO NO VISOR
+_S_DESENHA_PONTOS:
+mov PONTO_CEN, 65500
+mov PONTO_DEC, 65501
+mov PONTO_UNI, 65502
+mov #' ', 65503
+mov TEMPO_DEC, 65504
+mov TEMPO_UNI, 65505
+rts r7
+
+; EXISTE ASTEROIDE SOB A MIRA
+ROTINA_DO_ESPACO:
+
+; Existe asteroide sob a mira?
+
+; r3 = mira
+; r4 = asteroide 1 position
+; if r3 == r4 or r3+1 == r4 > BOOM
+
+; r3 = mira
+; r4 = asteroide 2 position
+; if r3 == r4 or r3+1 == r4 > BOOM
+
+; r3 = mira
+; r4 = asteroide 3 position
+; if r3 == r4 or r3+1 == r4 > BOOM
+
+mov #MIRA,r1
+
+; estado == 2
+mov 2(r1),r3
+cmp r3,#0
+beq NEXT_A_1
+
+mov 2(r1),r3 ; r3 = mira position
+inc r3
+mov #ASTEROIDES,r1
+mov 2(r1),r4 ; r4 = asteroide 1 position
+cmp r3,r4
+beq BOOM
+inc r3
+cmp r3,r4
+beq BOOM
+
+NEXT_A_1:
+mov #MIRA,r1
+
+; estado == 2
+mov 2(r1),r3
+cmp r3,#0
+beq NEXT_A_2
+
+mov 2(r1),r3 ; r3 = mira position
+inc r3
+mov #ASTEROIDES,r1
+add #10,r1 ; asteroide 2
+mov 2(r1),r4 ; r4 = asteroide 2 position
+cmp r3,r4
+beq BOOM
+inc r3
+cmp r3,r4
+beq BOOM
+
+NEXT_A_2:
+mov #MIRA,r1
+
+; estado == 2
+mov 2(r1),r3
+cmp r3,#0
+beq NEXT_A_3
+
+mov 2(r1),r3 ; r3 = mira position
+inc r3
+mov #ASTEROIDES,r1
+add #20,r1 ; asteroide 3
+mov 2(r1),r4 ; r4 = asteroide 3 position
+cmp r3,r4
+beq BOOM
+inc r3
+cmp r3,r4
+beq BOOM
+
+NEXT_A_3:
+jmp _S_SIMULACAO ; else termina/jmp to etapa 2
+
+;BOOM:
+;ASTEROIDE STRUCTURE
+;mov #0, 8(r1) ; tamanho
+;mov #0, 6(r1) ; tipo
+;mov #0, 4(r1) ; nova posicao
+;mov #0, 2(r1) ; posicao atual
+;mov #0, 0(r1) ; estado
+
+BOOM:
+mov 8(r1),r3 ; r3 = tamanho
+dec r3
+mov r3,8(r1) ; tamanho - 1
+cmp r3,#0
+beq TAMANHO_EH_ZERO
+jmp _S_SIMULACAO
+
+TAMANHO_EH_ZERO:
+mov #3, 0(r1) ; apaga asteroide
+
+; SOMA PONTOS
+mov 6(r1),r4 ; r4 = tipo
+
+cmp r4,#0
+bne NEXTP1
+add #1,PONTO_UNI
+br NEXTPFIM
+
+NEXTP1:
+cmp r4,#1
+bne NEXTP2
+add #2,PONTO_UNI
+br NEXTPFIM
+
+NEXTP2:
+cmp r4,#2
+bne NEXTP3
+add #4,PONTO_UNI
+br NEXTPFIM
+
+NEXTP3:
+cmp r4,#3
+bne NEXTPFIM
+add #8,PONTO_UNI
+br NEXTPFIM
+
+NEXTPFIM:
+
+; ATUALIZA PONTOS
+cmp PONTO_UNI, #58
+bmi PODE_CONTINUAR 		; verifica se deve incrementar dezena
+
+; INCREMENTA DEZENA
+mov PONTO_UNI,r4 ; r4 = pontos da unidade
+sub #'9',r4 ; r4 - 1= valor da unidade
+dec r4
+add #48,r4 ; number to ascii
+mov r4, PONTO_UNI
+inc PONTO_DEC ; fim
+
+cmp PONTO_DEC, #58
+bmi PODE_CONTINUAR 		; verifica se deve incrementar dezena
+
+; INCREMENTA CENTENA
+mov PONTO_DEC,r4 ; r4 = pontos da unidade
+sub #'9',r4 ; r4 = valor da dezena
+dec r4
+add #48,r4 ; number to ascii
+mov r4, PONTO_DEC
+inc PONTO_CEN ; fim
+
+PODE_CONTINUAR:
+jmp _S_SIMULACAO
+
+
+; ROTINA PARA APAGAR TODOS OS ASTEROIDES E MIRA
+APAGADOR:
+mov #MIRA,r1
+mov #3, 0(r1) ; estado
+mov #ASTEROIDES,r1
+mov #3, 0(r1) ; estado
+add #10,r1
+mov #3, 0(r1) ; estado
+add #10,r1
+mov #3, 0(r1) ; estado
+rts r7
+
+msg0:      dab 'Mauricio Ize - 00273168    ',0
+msg1:      dab 'Aperte I para iniciar     ',0
+msg2:      dab 'Fim do programa         ',0
+msg3:      dab 'Pontuacao final: ',0,0,0,0
+msg4:      dab '                                       ',0
+msg5:      dab ' ',0
+msg6:      dab ' ',0
+msg7:      dab ' ',0
+
+tecla_I:   dab 0,'I'
+tecla_T:   dab 0,'T'
+
+; ACESSO EM 16 bits
+PONTO_CEN:	dw	0
+PONTO_DEC:	dw	0
+PONTO_UNI:	dw	0
+TEMPO_DEC:	dw	0
+TEMPO_UNI:	dw	0
+;
+
+
+; ROTINA ESPERA ENTER
+espera_enter:
+mov #-1,TECLA
+ainda_nao:
+tst TECLA
+bmi ainda_nao
+cmp TECLA,#H0D
+bne espera_enter
+rts r7
+
+
+
+;> Subrotina para escrever mensagem no visor otimizada (V12 - 25/09/2014):
+;> Chamada da subrotina:
+;> MOV #endmensagem,R0          ; endereco da mensagem a ser escrita no visor
+;> MOV #indicevisor,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;> JSR R7,_S_ESCREVER_NO_VISOR
+;> Exemplo de uso:
+;>	MOV #msg,R0       ; endereco da mensagem a ser escrita no visor
+;>	MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;>	JSR R7,_S_ESCREVER_NO_VISOR
+;> :::::::::::::::::::::::::::::::::::::::::::::::::
+;> msg: DAB '* BibCesar.ced V. 12 -- 25/09/2014 *',0 ;<<< NOTAR O '0' APOS O TEXTO!!!
+_S_ESCREVER_NO_VISOR:
+ADD #65500, R1         ; transforma indice do LED em endereco de E/S no visor
+MOV R3, -(R6)          ; salva R3 para usar na subrotina (V12 - 25/09/2014)
+__VOLTA_A_ESCREVER:
+MOV -1(R0),R3         ; coloca 2 caracteres em R3, comecando em "endmensagem-1"
+AND #255,R3           ; zera byte mais significativo da palavra lida
+CMP R3,#0             ; testa se terminou mensagem (achou 1 byte com 0s bin?rios)
+BNE __ESCREVE_NO_LED  ; se nao terminou, vai exibir caractere lido
+MOV (R6)+,R3          ; restaura valor original do R3
+RTS R7                ; retorna ao ponto de chamada
+__ESCREVE_NO_LED:
+MOV R3,(R1)           ; move para o visor
+INC R0                ; aponta R0 para o proximo byte da mensagem
+INC R1                ; aponta R1 para o proximo LED no visor
+BEQ __FIM_VISOR       ; fim do visor - volta ao LED 00
+BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+__FIM_VISOR:
+MOV #65500,R1         ; aponta para primeiro LED
+BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+
+
+
+
+
+_S_LIMPA_VISOR_RAPIDA:
+          CLR 65500             ; limpa LED 00
+          CLR 65501             ; limpa LED 01
+          CLR 65502             ; limpa LED 02
+          CLR 65503             ; limpa LED 03
+          CLR 65504             ; limpa LED 04
+          CLR 65505             ; limpa LED 05
+          CLR 65506             ; limpa LED 06
+          CLR 65507             ; limpa LED 07
+          CLR 65508             ; limpa LED 08
+          CLR 65509             ; limpa LED 09
+          CLR 65510             ; limpa LED 10
+          CLR 65511             ; limpa LED 11
+          CLR 65512             ; limpa LED 12
+          CLR 65513             ; limpa LED 13
+          CLR 65514             ; limpa LED 14
+          CLR 65515             ; limpa LED 15
+          CLR 65516             ; limpa LED 16
+          CLR 65517             ; limpa LED 17
+          CLR 65518             ; limpa LED 18
+          CLR 65519             ; limpa LED 19
+          CLR 65520             ; limpa LED 20
+          CLR 65521             ; limpa LED 21
+          CLR 65522             ; limpa LED 22
+          CLR 65523             ; limpa LED 23
+          CLR 65524             ; limpa LED 24
+          CLR 65525             ; limpa LED 25
+          CLR 65526             ; limpa LED 26
+          CLR 65527             ; limpa LED 27
+          CLR 65528             ; limpa LED 28
+          CLR 65529             ; limpa LED 29
+          CLR 65530             ; limpa LED 30
+          CLR 65531             ; limpa LED 31
+          CLR 65532             ; limpa LED 32
+          CLR 65533             ; limpa LED 33
+          CLR 65534             ; limpa LED 34
+          CLR 65535             ; limpa LED 35
+          RTS R7                ; retorna ao ponto de chamada
+
+
+
+
+
+
+
+
+;> Subrotina para encerrar a execu??o do programa (adicionada na V11 - 09/09/2014)
+;> Chamada da subrotina:
+;> JSR R7,_S_ENCERRAR
+_S_ENCERRAR:
+	MOV #__msgfim,R0      ; endereco da mensagem a ser escrita no visor
+	MOV #0,R1             ; numero do LED onde deve iniciar a mensagem
+	JSR R7,_S_ESCREVER_NO_VISOR
+	HLT
+__msgfim: dab '** Execucao do programa encerrada **',0
+
+
+
+
+
+
+
+
+
+
+
+;--------------------------------------------------------------------------
+;Fun��o: Gerador aleatorio.
+;	Gera um n�mero pseudo aleat�rio de 16 bits sem sinal
+;	Usa o polin�mio x16 + x14 + x13 + x11 + 1
+;Uso:	Na inicializacao deve-se iniciar a semente (seed)
+;		Escrever a semente em random_seed
+;	Para obter um novo n�mero, basta usar
+;		JSR	R7,random
+;	O n�mero aleat�rio retorna em R0
+;Ref:	https://en.wikipedia.org/wiki/Linear_feedback_shift_register
+;--------------------------------------------------------------------------
+random_seed:	dw	0
+random_shift:	dw	0
+random:
+        mov     R1,-(R6)          ; salva R1 na pilha porqu usa em random
+	tst	random_seed
+	beq	random_1
+	mov	random_seed,random_shift
+	clr	random_seed
+random_1:
+	mov	random_shift,r0
+	clr	r1
+	
+	asr	r0			; C = bit16
+	bcc	random_2_16
+	inc	r1
+random_2_16:
+	
+	asr	r0			; C = bit14
+	asr	r0
+	bcc	random_2_14
+	inc	r1
+random_2_14:
+
+	asr	r0			; C = bit13
+	bcc	random_2_13
+	inc	r1
+random_2_13:
+
+	asr	r0			; C = bit11
+	asr	r0
+	bcc	random_2_11
+	inc	r1
+random_2_11:
+
+	asr	r1			; C = XOR( bit 16, 14, 13, 11 )
+	ror	random_shift
+	mov	random_shift,r0
+        mov     (R6)+,R1                ; restaura R1 a partir da pilha
+	rts	r7
+; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==========================================================================
+;	8000 - 80FF: �rea para as vari�veis de comunica��o entre o PP e a INT
+;==========================================================================
+	org	H8000
+; ... ESSA AREA NAO DEVER� SER ALTERADA
+	
+; Temporizador de SEGUNDOS
+TIMER:	dw	0
+
+; Tecla digitada com comando para o programa principal
+TECLA:	dw	0
+
+; Mira
+; Palavra 0 -> Controla se deve mostrar a mira. Se for "0" n�o mostra
+; Palavra 1 -> Ultima coordenada do visor onde foi desenhada a mira
+; Palavra 2 -> Coordenada onde a mira dever� ser desenhada
+MIRA:	daw	[3]
+
+; Asteroides
+; Podem estar vis�veis no visor at� 3 aster�ides.
+; Cada asteroide � descrito por 5 palavras:
+; Palavra 0 -> Controla se deve mostrar o asteroide no visor. Se for "0" n�o mostra
+; Palavra 1 -> Ultima coordenada do visor onde foi desenhado o asteroide
+; Palavra 2 -> Coordenada onde o asteroide dever� ser desenhado
+; Palavra 3 -> Tipo de asteroide. Existem 4 tipos, numerados de 0 at� 3
+; Palavra 4 -> Pontos de vida do asteroide. As ser criado, os asteroides tem 1,2,4 e 8 pontos de vida
+ASTEROIDES:
+	daw	[5]	; Primeiro asteroide
+	daw	[5]	; Segundo asteroide
+	daw	[5]	; Terceiro asteroide
+
+
+MIRA_estado:	EQU	MIRA	; Estado do desenho: 0 ~ 3
+MIRA_atual:	EQU	MIRA+2	; Coordenada onde est� desenhada a MIRA [0;26]
+MIRA_nova:	EQU	MIRA+4	; Nova coordenada onde desenhar a MIRA
+
+NUMERO_DE_ASTEROIDES:	equ	3
+ASTEROIDE_estado:	equ	0
+ASTEROIDE_atual:	equ	2
+ASTEROIDE_nova:		equ	4
+ASTEROIDE_tipo:		equ	6
+ASTEROIDE_vida:		equ	8
+SIZEOF_STRUCT_ASTEROIDE:equ	10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==========================================================================
+;	8100 - 81FF Nessa �rea deve ser colocada a rotina respons�vel por
+;		inicializar as vari�veis que forem necess�rias, dos tratadores de interrup��o
+;==========================================================================
+org	H8100
+
+; Set Interrupt Service Rotine
+mov	#isr, IVET
+
+; Clear status do teclado
+clr	TECST
+
+; Limpa interrup��es pendentes
+clr	INTS
+
+; Inicializacao das variaveis do sistema
+mov	#10, TimerInterno
+
+mov	#TEMPO_ANIMACAO, timerAnimacao
+
+rts	r7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;==========================================================================
+;	8200 - FF7F: �rea para colocar o TRATADOR DE INTERRUP��O (INT)
+;		Aqui devem ser colocadas as rotinas e vari�veis
+;==========================================================================
+
+TEMPO_ANIMACAO:		equ	2
+
+;--------------------------------------------------------------------------
+; Visor
+VISOR_PONTOS:		equ	VISOR+0	; local no visor para os pontos
+VISOR_TEMPO:		equ	VISOR+4	; local no visor para o tempo de jogo
+VISOR_CAMPO:		equ	VISOR+6	; local no visor onde e o campo de batalha
+VISOR_MIRA_LEFT:  	equ	VISOR+6
+VISOR_MIRA_RIGHT:	equ	VISOR+9
+
+org	H8200
+
+isr:
+	mov		r0,-(r6)		; Salva registradores
+	mov		r1,-(r6)
+	mov		r2,-(r6)
+	mov		r3,-(r6)
+	mov		r4,-(r6)
+	mov		r5,-(r6)
+
+	mov		INTS,r0			; Verifica se � INT do TIMER
+	and		#1,r0
+	beq		ISR2
+	jsr		r7,ISRtim		; Tratamento da INT do TIMER
+	and		#hFFFE,INTS		; Desliga bit de INT TIMER
+ISR2:
+	mov		INTS,r0			; Verifica se � INT do TECLADO
+	and		#2,r0
+	beq		ISR3
+	jsr		r7,ISRtec		; Tratamento da INT do TECLADO
+
+	and		#hFFFD,INTS		; Desliga bit de INT TECLADO
+ISR3:
+	mov		(r6)+,r5		; Retorna os registradores da pilha
+	mov		(r6)+,r4
+	mov		(r6)+,r3
+	mov		(r6)+,r2
+	mov		(r6)+,r1
+	mov		(r6)+,r0
+
+	rti						; Return From Interrupt
+
+
+
+	
+;------------------------------------------------------------------------------
+; Aceita apenas as teclas "IPAD" ou "ipad"
+ISRtec:
+	; Leitura da tecla do dispositivo
+
+;        clr TECST
+;        tst TECST
+;        beq -6
+
+	mov	TECDT,r0
+	clr	TECST
+
+	; Verifica se � ENTER ou SPACE	
+	cmp	r0,#H0D
+	beq	ISRtec_GO
+	cmp	r0,#' '
+	beq	ISRtec_GO
+	
+	; Verifica se � "ipadIPAD" ou "tT"
+	and	#HDF,r0
+	cmp	r0,#'I'
+	beq	ISRtec_GO
+	cmp	r0,#'P'
+	beq	ISRtec_GO
+	cmp	r0,#'A'
+	beq	ISRtec_GO
+	cmp	r0,#'D'
+	beq	ISRtec_GO
+	cmp	r0,#'T'
+	beq	ISRtec_GO
+	
+	br	ISRtec_fim
+	
+ISRtec_GO:
+	
+	; Verifica se TECLA esta livre. Se n�o est�, ignora a tecla. Sen�o, salva em TECLA
+	tst		TECLA
+	bpl		ISRtec_fim	
+	mov		r0,TECLA	
+
+ISRtec_fim:
+	rts		r7
+
+;------------------------------------------------------------------------------
+; Tratamento de timer
+TimerInterno:	dw	0
+timerAnimacao:	dw	0
+ISRtim:
+	; Decrementa timer de anima��o
+	dec	timerAnimacao
+	bne	noAnimation
+	mov	#TEMPO_ANIMACAO,timerAnimacao
+	
+	; Apaga MIRA e ASTEROIDES
+	jsr	r7,apagaMira
+	jsr	r7,apagaAsteroides
+	
+	; Movimento os ASTEROIDES
+	mov	#NUMERO_DE_ASTEROIDES,r2
+	mov	#ASTEROIDES,r1
+moveAsteroidesLoop:
+	cmp	ASTEROIDE_estado(r1),#2
+	bne	moveAlvosNext
+	
+	tst	ASTEROIDE_nova(r1)
+	beq	moveAlvosKill
+	dec	ASTEROIDE_nova(r1)
+	br	moveAlvosNext
+moveAlvosKill:
+	mov	#3,ASTEROIDE_estado(r1)
+	
+moveAlvosNext:
+	add	#SIZEOF_STRUCT_ASTEROIDE,r1
+	sob	r2,moveAsteroidesLoop
+	
+	; Redesenha primeiro os ASTEROIDES e depois a MIRA
+	jsr	r7,desenhaAsteroides
+	jsr	r7,desenhaMira
+	
+noAnimation:
+
+	; Incrementa o timer de segundos
+	dec	TimerInterno
+	bne	ISRtim_Fim
+	mov	#10,TimerInterno
+	inc	TIMER
+
+ISRtim_Fim:
+	rts		r7
+
+;--------------------------------------------------------------------------
+; Verifica se tem que apagar a MIRA
+; Se tiver, APAGA
+apagaMira:
+	cmp	MIRA_estado,#2
+	beq	apagaMira_2
+	cmp	MIRA_estado,#3
+	beq	apagaMira_3
+	rts	r7
+	
+apagaMira_2:
+        cmp	MIRA_atual,MIRA_nova
+        beq	nao_apaga   
+	mov	MIRA_atual,r0	; Apagar  a  mira  que  est�  desenhada  na  coordenada POSI��O  ATUAL
+	mov	#' ',VISOR_MIRA_LEFT(r0)
+	mov	#' ',VISOR_MIRA_RIGHT(r0)
+nao_apaga:
+	rts	r7
+	
+apagaMira_3:	
+	mov	MIRA_atual,r0	; Apagar  a  mira  que  est�  desenhada  na  coordenada POSI��O  ATUAL
+	mov	#' ',VISOR_MIRA_LEFT(r0)
+	mov	#' ',VISOR_MIRA_RIGHT(r0)
+	clr	MIRA_estado	; Escrever  �0�  em ESTADO. 
+	rts	r7
+
+
+
+;--------------------------------------------------------------------------
+; Verifica se tem que desenhar a MIRA
+; Se tiver, DESENHA
+desenhaMira:
+	cmp	MIRA_estado,#1
+	beq	desenhaMira_1
+	cmp	MIRA_estado,#2
+	beq	desenhaMira_2
+	rts	r7
+	
+desenhaMira_1:
+	mov	MIRA_nova,r0			; desenhar a mira na coordenada NOVA POSI��O
+	mov	#'[',VISOR_MIRA_LEFT(r0)
+	mov	#']',VISOR_MIRA_RIGHT(r0)
+	mov	MIRA_nova,MIRA_atual		; copiar esse valor para a POSICAO ATUAL
+	mov	#2,MIRA_estado			; Escrever �2� em ESTADO. 	
+	rts	r7
+	
+desenhaMira_2:
+	mov	MIRA_nova,r0			; redesenhar a mira na coordenada NOVA POSI��O
+	mov	#'[',VISOR_MIRA_LEFT(r0)
+	mov	#']',VISOR_MIRA_RIGHT(r0)
+	mov	MIRA_nova,MIRA_atual		; NOVA POSI��O deve ser copiado para POSI��O ATUAL. 
+	rts	r7
+
+;--------------------------------------------------------------------------
+; Para cada asteroide, verifica se tem que apaga-los
+; Se tiver, apaga
+apagaAsteroides:
+	mov	#NUMERO_DE_ASTEROIDES,r1	; Numero de alvos
+	mov	#ASTEROIDES,r0			; Ponteiro das estruturas de dados dos alvos
+
+apagaAsteroides_Loop:
+	cmp	ASTEROIDE_estado(r0),#2
+	beq	apagaAsteroides_2
+	cmp	ASTEROIDE_estado(r0),#3
+	beq	apagaAsteroides_3
+	br	apagaAsteroides_Next
+
+apagaAsteroides_2:
+	mov	ASTEROIDE_atual(r0),r2	; apagar o asteroide da  coordenada  POSI��O  ATUAL
+	mov	#' ',VISOR_CAMPO(r2)
+	br	apagaAsteroides_Next
+
+apagaAsteroides_3:
+	mov	ASTEROIDE_atual(r0),r2	; Apagar asteroide desenhado na coordenada POSI��O ATUAL.
+	mov	#' ',VISOR_CAMPO(r2)
+	clr	ASTEROIDE_estado(r0)	; Escrever �0� em ESTADO. 
+	br	apagaAsteroides_Next
+
+apagaAsteroides_Next:
+	add	#SIZEOF_STRUCT_ASTEROIDE,r0
+	sob	r1,apagaAsteroides_Loop
+
+	rts	r7
+
+	
+;--------------------------------------------------------------------------
+; Para cada asteroide, verifica se tem que desenha-lo
+; Se tiver, desenha
+desenhaAsteroides:
+	mov	#NUMERO_DE_ASTEROIDES,r1	; Numero de alvos
+	mov	#ASTEROIDES,r0			; Ponteiro das estruturas de dados dos alvos
+
+desenhaAsteroides_loop:
+	cmp	ASTEROIDE_estado(r0),#1
+	beq	desenhaAsteroides_1
+	cmp	ASTEROIDE_estado(r0),#2
+	beq	desenhaAsteroides_2
+	br	desenhaAsteroides_Next
+
+desenhaAsteroides_1:
+	mov	ASTEROIDE_nova(r0),r2		; Desenhar  o  asteroide na  coordenada NOVA  POSI��O
+;	mov	ASTEROIDE_tipo(r0),r3
+	mov	ASTEROIDE_vida(r0),r3
+;	add	#'1',r3
+	add	#'0',r3
+	mov	r3,VISOR_CAMPO(r2)
+	mov	ASTEROIDE_nova(r0),ASTEROIDE_atual(r0)	; Copiar  esse  valor  para  a  POSICAO  ATUAL
+	mov	#2,ASTEROIDE_estado(r0)		; Escrever �2� em ESTADO. 
+	br	desenhaAsteroides_Next
+
+desenhaAsteroides_2:
+	mov	ASTEROIDE_nova(r0),r2		; Redesenh�-lo  na  coordenada  NOVA  POSI��O
+;	mov	ASTEROIDE_tipo(r0),r3
+	mov	ASTEROIDE_vida(r0),r3
+;	add	#'1',r3
+	add	#'0',r3
+	mov	r3,VISOR_CAMPO(r2)
+	mov	ASTEROIDE_nova(r0),ASTEROIDE_atual(r0)	; Copiar NOVA POSI��O para POSI��O ATUAL. 
+	br	desenhaAsteroides_Next
+	
+desenhaAsteroides_Next:
+	add	#SIZEOF_STRUCT_ASTEROIDE,r0
+	sob	r1,desenhaAsteroides_loop
+
+	rts	r7
+
+
+
+
+
+
+
+
+
+
+

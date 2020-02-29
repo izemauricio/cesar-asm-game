@@ -1,0 +1,740 @@
+;==========================================================================
+;
+;	Modelo para o desenvolvimento do trabalho do CESAR
+;
+;	Autores: Sergio Cechin & Carlos Lisboa
+;
+;	0000 - 7FFF: PROGRAMA PRINCIPAL
+;	8000 - 80FF: COMUNICACAO PP E INT
+;	8100 - 81FF: INICIALIZACAO DE INTERRUPCAO
+;	8200 - FF7F: TRATADOR DE INTERRUPCAO
+;	FF80 - FFFF: PERIFERICOS
+;
+;==========================================================================
+
+;==========================================================================
+;	FF80 - FFFF: PERIFERICOS
+;==========================================================================
+
+org	65408
+org	65470
+IVET:	dw	0
+org	65472
+dab	[24]
+INTS:	db	0		; INTERRUPT STATUS: IP x x x . x x IPStec IPStim
+INTE:	db	0		; INTERRUPT ENABLE: IE x x x . x x IEStec IEStim
+TECST:	db	0		; Status do teclado
+TECDT:	db	0		; Dado do teclado
+VISOR:	dab	[36]
+
+;==========================================================================
+;	0000 - 7FFF: PROGRAMA PRINCIPAL
+;==========================================================================
+
+org	H0000
+	
+; **********************************************
+; **********************************************
+; ** Aqui comeca o programa para testar a ISR **
+; **********************************************
+; **********************************************
+
+MOV #32000, R6
+
+jsr r7,H8100
+inc r5
+mov #131, INTE
+mov #-1, TECLA
+
+; Mensagem inicial sobre dar ENTER
+     MOV #msg0,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+;
+; Teste do atendimento das interrupcoes do teclado
+;
+     MOV #msg1,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg2,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg3,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg4,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg5,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg6,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg7,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     mov #-1,TECLA
+     clr num_Ps
+nenhuma_tecla:
+     tst TECLA
+     bmi nenhuma_tecla
+     cmp TECLA,tecla_SP
+     beq tecla_SPC
+     cmp TECLA,tecla_EN
+     beq tecla_ENT
+     cmp TECLA,tecla_I
+     beq tecla_valida
+     cmp TECLA,tecla_A
+     beq tecla_valida
+     cmp TECLA,tecla_D
+     beq tecla_valida
+     cmp TECLA,tecla_P
+     bne tecla_invalida
+     inc num_Ps
+     cmp num_Ps,#2
+     beq proximo_teste
+     br  tecla_valida_P
+tecla_invalida:
+     MOV #tecla_inv,R0  ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     mov TECLA,65513
+     mov #-1,TECLA
+     br  nenhuma_tecla
+tecla_valida:
+     clr num_Ps
+tecla_valida_P:
+     MOV #tst_tecla,R0  ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     mov TECLA,65513
+     mov #-1,TECLA
+     br  nenhuma_tecla     
+tecla_SPC:
+     MOV #leu_SPACE,R0  ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     mov #-1,TECLA
+     jmp nenhuma_tecla     
+tecla_ENT:
+     MOV #leu_ENTER,R0  ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     mov #-1,TECLA
+     jmp nenhuma_tecla     
+;
+; Teste da contagem de tempo e animacao da mira
+;
+proximo_teste:
+     MOV #msg8,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg9,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg10,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg11,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg12,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg13,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg14,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg15,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg16,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg17,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+;jmp temporario
+     MOV #msg18,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+
+     clr TIMER
+     clr segundo
+     mov #14,MIRA+4
+     mov #1,MIRA
+repete:
+     mov TIMER,r0
+     add #48,r0
+     mov r0,65518
+     cmp TIMER,segundo
+     beq nao_mover_mira
+     mov TIMER,segundo
+     cmp TIMER,#5
+     bgt dec_mira
+     inc MIRA+4
+     br  nao_mover_mira
+dec_mira:
+     dec MIRA+4
+nao_mover_mira:
+     cmp r0,#57
+     bne repete
+     jsr r7,espera_enter
+     mov #3,MIRA
+     mov TIMER,segundo     
+espera_apagar_mira:
+     cmp TIMER,segundo
+     beq espera_apagar_mira
+;
+; Teste da animacao dos asteroides
+;
+;temporario:
+     MOV #msg19,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg20,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg21,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg22,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg23,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg24,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg25,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg26,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg27,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+     MOV #msg28,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+     jsr r7,espera_enter
+
+     MOV #msg29,R0       ; endereco da mensagem a ser escrita no visor
+     MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+     JSR R7,_S_ESCREVER_NO_VISOR
+
+     mov #asteroides,r1 ; ponteiro para o array de asteroides (5 palavras por asteriode)
+     mov TIMER,segundo     
+espera1:
+     mov TIMER,r0
+     sub segundo,r0
+     beq espera1    ; TIMER nao mudou - menos de um segundo decorrido
+     jsr r7,dispara
+espera2:
+     mov TIMER,r0
+     sub segundo,r0
+     cmp r0,#2
+     bne espera2
+     jsr r7,dispara
+espera3:
+     mov TIMER,r0
+     sub segundo,r0
+     cmp r0,#4
+     bne espera3
+     dec r0
+     jsr r7,dispara
+
+     jsr r7,espera_enter
+
+     JSR R7,_S_ENCERRAR ; TERMINA A EXECUCAO DO PROGRAMA DE TESTE DA ISR COM UM 'HLT' (NAO RETORNA)
+
+dispara: ; inicia a animacao de um asteroide cujo tipo esta no R0
+     mov r0,8(r1)  ; tamanho = 2, 3 ou 4
+     dec r0
+     mov r0,6(r1)  ; tipo = 1, 2 ou 3
+     mov #29,4(r1) ; nova posicao = posicao inicial do asteroide no visor
+     mov #1,0(r1)  ; estado do asteroide = 1 para comecar animacao
+     add #10,r1    ; aponta para proximo asteroide no array
+     rts r7
+
+espera_enter:
+     mov #-1,TECLA
+ainda_nao:
+     tst TECLA
+     bmi ainda_nao
+     cmp TECLA,#H0D
+     bne espera_enter
+     rts r7
+
+; VARIAVEIS USADAS NO PROGRAMA DE TESTE
+tst_tecla: dab 'Tecla lida: ''' '''. Tecla valida.      ',0
+tecla_inv: dab 'Tecla lida: ''' '''. Tecla INVALIDA.    ',0
+leu_SPACE: dab 'Tecla lida: ESPACO. Tecla valida.   ',0
+leu_ENTER: dab 'Tecla lida: ENTER. Tecla valida.    ',0
+tecla_SP:  dab 0,' '
+tecla_EN:  dab 0,H0D
+tecla_I:   dab 0,'I'
+tecla_A:   dab 0,'A'
+tecla_D:   dab 0,'D'
+tecla_P:   dab 0,'P'
+msg0:      dab 'Apos mensagens iniciais tecle ENTER.',0
+msg1:      dab 'Este programa testa a sua ISR.      ',0
+msg2:      dab 'Inicialmente testa a ISR do teclado.',0
+msg3:      dab 'Para isso, digite varias teclas.    ',0
+msg4:      dab 'A ISR nao deve aceitar invalidas.   ',0
+msg5:      dab 'Se passar uma invalida, erro na ISR.',0
+msg6:      dab 'Digite 2 vezes P para sair do teste.',0
+msg7:      dab 'Comece o teste.                     ',0
+;
+msg8:      dab 'Apos cada mensagem tecle ENTER.     ',0
+msg9:      dab 'Agora vamos testar a ISR do timer,  ',0
+msg10:     dab 'mostrando um contador de segundos, e',0
+msg11:     dab 'a '''animacao''' da mira nos 2 sentidos.',0
+msg12:     dab 'Apos 9 segundos, o contador para.   ',0
+msg13:     dab 'Se nao parar, a ISR tem erro.       ',0
+msg14:     dab 'A mira deve ir para a direita e     ',0
+msg15:     dab 'voltar para a esquerda apos 5 segs. ',0
+msg16:     dab 'Se nao fizer assim, a ISR tem erro. ',0
+msg17:     dab 'ENTER = iniciar/terminar o teste.   ',0
+msg18:     dab 'Tempo decorrido = ?                 ',0
+;
+msg19:     dab 'Agora vamos testar a ISR do timer,  ',0
+msg20:     dab 'na '''animacao''' de asteroides.        ',0
+msg21:     dab 'Aparecerao 3 asteroides numerados de',0
+msg22:     dab '1 a 3, nesta ordem. Devem entrar no ',0
+msg23:     dab 'visor pelo lado direito e sumir ao  ',0
+msg24:     dab 'chegar no setimo LED do visor.      ',0
+msg25:     dab 'Os tempos entre eles serao 1 e 2    ',0
+msg26:     dab 'segundos, respectivamente. Se a ani-',0
+msg27:     dab 'macao for diferente, ha erro na ISR.',0
+msg28:     dab 'ENTER = iniciar/terminar o teste.   ',0
+msg29:     dab 'Aster:..............................',0
+
+num_Ps:    dw  0
+segundo:   dw  0
+
+; SUBROTINAS DA BIBCESAR USADAS NO PROGRAMA DE TESTE
+;> Subrotina para escrever mensagem no visor otimizada (V12 - 25/09/2014):
+;> Chamada da subrotina:
+;> MOV #endmensagem,R0          ; endereco da mensagem a ser escrita no visor
+;> MOV #indicevisor,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;> JSR R7,_S_ESCREVER_NO_VISOR
+;> Exemplo de uso:
+;>	MOV #msg,R0       ; endereco da mensagem a ser escrita no visor
+;>	MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;>	JSR R7,_S_ESCREVER_NO_VISOR
+;> :::::::::::::::::::::::::::::::::::::::::::::::::
+;> msg: DAB '* BibCesar.ced V. 12 -- 25/09/2014 *',0 ;<<< NOTAR O '0' APOS O TEXTO!!!
+_S_ESCREVER_NO_VISOR:
+          ADD #65500,R1         ; transforma indice do LED em endereco de E/S no visor
+          MOV R3,-(R6)          ; salva R3 para usar na subrotina (V12 - 25/09/2014)
+__VOLTA_A_ESCREVER:
+          MOV -1(R0),R3         ; coloca 2 caracteres em R3, comecando em "endmensagem-1"
+          AND #255,R3           ; zera byte mais significativo da palavra lida
+          CMP R3,#0             ; testa se terminou mensagem (achou 1 byte com 0s bin?rios)
+          BNE __ESCREVE_NO_LED  ; se nao terminou, vai exibir caractere lido
+          MOV (R6)+,R3          ; restaura valor original do R3
+          RTS R7                ; retorna ao ponto de chamada
+
+__ESCREVE_NO_LED:
+          MOV R3,(R1)           ; move para o visor
+          INC R0                ; aponta R0 para o proximo byte da mensagem
+          INC R1                ; aponta R1 para o proximo LED no visor
+          BEQ __FIM_VISOR       ; fim do visor - volta ao LED 00
+          BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+__FIM_VISOR:
+          MOV #65500,R1         ; aponta para primeiro LED
+          BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+
+;> Subrotina para encerrar a execu??o do programa (adicionada na V11 - 09/09/2014)
+;> Chamada da subrotina:
+;> JSR R7,_S_ENCERRAR
+_S_ENCERRAR:
+	MOV #__msgfim,R0      ; endereco da mensagem a ser escrita no visor
+	MOV #0,R1             ; numero do LED onde deve iniciar a mensagem
+	JSR R7,_S_ESCREVER_NO_VISOR
+	HLT
+__msgfim: dab '** Execucao do programa encerrada **',0
+
+; ***********************************************
+; ***********************************************
+; ** Aqui termina o programa para testar a ISR **
+; ***********************************************
+; ***********************************************
+
+
+
+
+
+
+;--------------------------------------------------------------------------
+;Fun??o: Gerador aleatorio.
+;	Gera um n?mero pseudo aleat?rio de 16 bits sem sinal
+;	Usa o polin?mio x16 + x14 + x13 + x11 + 1
+;Uso:	Na inicializacao deve-se iniciar a semente (seed)
+;		JSR	R7, random
+;		O numero aleatorio fica em r0
+;   https://en.wikipedia.org/wiki/Linear_feedback_shift_register
+;--------------------------------------------------------------------------
+random_seed:	dw	0
+random_shift:	dw	0
+random:
+	tst	random_seed
+	beq	random_1
+	mov	random_seed,random_shift
+	clr	random_seed
+random_1:
+	mov	random_shift,r0
+	clr	r1
+	
+	asr	r0			; C = bit16
+	bcc	random_2_16
+	inc	r1
+random_2_16:
+	
+	asr	r0			; C = bit14
+	asr	r0
+	bcc	random_2_14
+	inc	r1
+random_2_14:
+
+	asr	r0			; C = bit13
+	bcc	random_2_13
+	inc	r1
+random_2_13:
+
+	asr	r0			; C = bit11
+	asr	r0
+	bcc	random_2_11
+	inc	r1
+random_2_11:
+
+	asr	r1			; C = XOR( bit 16, 14, 13, 11 )
+	ror	random_shift
+	
+	mov	random_shift,r0
+	rts	r7
+
+
+;==========================================================================
+;	8000 - 80FF: COMUNICACAO ENTRE PP E INT
+;==========================================================================
+
+org	H8000
+
+TIMER:	dw	0
+
+TECLA:	dw	0
+
+; Palavra 0 -> Controla se deve mostrar a mira. Se for "0" nao mostra
+; Palavra 1 -> Ultima coordenada do visor onde foi desenhada a mira
+; Palavra 2 -> Coordenada onde a mira dever? ser desenhada
+
+MIRA:     daw  [3]
+
+; Asteroides
+; Podem estar vis?veis no visor at? 3 aster?ides.
+; Cada asteroide ? descrito por 5 palavras:
+; Palavra 0 -> Controla se deve mostrar o asteroide no visor. Se for "0" n?o mostra
+; Palavra 1 -> Ultima coordenada do visor onde foi desenhado o asteroide
+; Palavra 2 -> Coordenada onde o asteroide dever? ser desenhado
+; Palavra 3 -> Tipo de asteroide. Existem 4 tipos, numerados de 0 at? 3
+; Palavra 4 -> Pontos de vida do asteroide. As ser criado, os asteroides tem 1,2,4 e 8 pontos de vida
+
+ASTEROIDES:
+daw	[5]	; Primeiro asteroide
+daw	[5]	; Segundo asteroide
+daw	[5]	; Terceiro asteroide
+
+;==========================================================================
+;	8100 - 81FF INICIALIZACAO DA INTERRUPCAO
+;==========================================================================
+
+org	H8100
+mov #MYISR, IVET
+TICK:    dw   0
+TICK_DRAW:    dw   0
+rts r7
+
+;==========================================================================
+;	8200 - FF7F: ROTINA DE INTERRUPCAO
+;==========================================================================
+
+org	H8200
+
+MYISR:
+
+mov r0,-(r6)                       ; salva r0-r5 na pilha
+mov r1,-(r6)
+mov r2,-(r6)
+mov r3,-(r6)
+mov r4,-(r6)
+mov r5,-(r6)
+
+mov INTS, r0
+and #1, r0                         ; verica se é rotina de timer
+bne ROTINA_TIMER_SHORTCUT          ; jmp se bit do teclado nao for zero
+RETORNA_TIMER:
+and #254,INTS                      ; zera bit do teclado
+
+
+jmp DRAW_MIRA                      ; subrotina para desenhar mira
+RETORNA_MIRA:
+
+cmp TICK_DRAW, #2                  ; desenha a cada 200 ms
+beq DRAW_ASTER_SHORT               ; subrotina para desenhar asteroides
+RETORNA_ASTER:
+
+mov INTS, r0
+and #2, r0                         ; verica se é rotina de teclado
+bne ROTINA_TECLADO_SHORTCUT        ; jmp se bit do timer nao for zero
+RETORNA_TECLADO:
+and #253,INTS                      ; zera bi do timer
+
+clr TECST                          ; zera status do teclado
+
+jmp RETORNA
+
+ROTINA_TECLADO_SHORTCUT:           ; branch limit problem
+jmp ROTINA_TECLADO
+
+ROTINA_TIMER_SHORTCUT:             ; branch limit problem
+jmp ROTINA_TIMER
+
+DRAW_ASTER_SHORT:
+clr TICK_DRAW
+jmp DRAW_ASTER
+
+; ---
+DRAW_MIRA:
+mov MIRA,r0                        ; verifica qual o estado da estrutura MIRA
+cmp r0,#0
+beq MIRA_NADA                      ; jmp if == 0
+cmp r0,#1
+beq MIRA_DRAW                      ; jmp if == 1
+cmp r0,#2
+beq MIRA_MOVE                      ; jmp if == 2
+cmp r0,#3
+beq MIRA_APAGAR                    ; jmp if == 3
+jmp RETORNA_MIRA                   ; finaliza
+
+MIRA_NADA:
+jmp RETORNA_MIRA
+
+MIRA_DRAW:
+mov #2,MIRA                        ; estado = 2
+mov MIRA+4,MIRA+2                  ; posicao_atual = nova_posicao
+mov MIRA+4,r1                      ; r1 = nova_posicao
+mov #'[',65506(r1)                 ; imprime no visor
+mov #' ',65507(r1)
+mov #' ',65508(r1)
+mov #']',65509(r1)
+jmp RETORNA_MIRA                   ; finaliza
+
+MIRA_MOVE:
+mov MIRA+2,r1                      ; r1 = posicao_atual
+mov #' ',65506(r1)                 ; apaga mira
+mov #' ',65507(r1)
+mov #' ',65508(r1)
+mov #' ',65509(r1)
+
+mov MIRA+4,MIRA+2                  ; posicao_atual = nova_posicao
+mov MIRA+4,r1                      ; r1 = nova_posicao
+mov #'[',65506(r1)                 ; imprime no visor
+mov #' ',65507(r1)
+mov #' ',65508(r1)
+mov #']',65509(r1)
+jmp RETORNA_MIRA                   ; finaliza
+
+MIRA_APAGAR:
+mov #0,MIRA                        ; estado = 0
+mov MIRA+2,r1                      ; r1 = posicao_atual
+mov #' ',65506(r1)                 ; apaga mira
+mov #' ',65507(r1)
+mov #' ',65508(r1)
+mov #' ',65509(r1)
+jmp RETORNA_MIRA                   ; finaliza
+
+; ---
+DRAW_ASTER:
+
+mov #ASTEROIDES,r1                 ; r1 = estrutura asteroides[3]
+mov #3,r2                          ; repete loop 3 vezes
+
+LOOP_ASTER:                        ; inicio do loop
+mov 0(r1),r0                       ; r0 = estado do asteroide
+cmp r0,#0
+beq ASTER_NADA                     ; jmp if estado == 0
+cmp r0,#1
+beq ASTER_DRAW                     ; jmp if estado == 1
+cmp r0,#2
+beq ASTER_MOVE                     ; jmp if estado == 2
+cmp r0,#3
+beq ASTER_APAGAR_SHORT             ; jmp if estado == 3
+jmp TEST_LOOP                      ; finaliza
+
+ASTER_APAGAR_SHORT:
+jmp ASTER_APAGAR
+
+ASTER_NADA:
+jmp TEST_LOOP
+
+ASTER_DRAW:
+mov #2,0(r1)                  ; estado = 2
+mov 4(r1),2(r1)               ; posicao atual = posicao nova
+mov 4(r1),r3                  ; r3 = posicao
+mov 6(r1),r4                  ; r4 = tipo
+jsr r7,TIPO_DO_ASTEROIDE      ; r4 = ascii do tipo
+mov r4,65506(r3)              ; desenha na posicao correta o ascii do tipo
+jmp TEST_LOOP                 ; repete para proximo asteroide
+
+ASTER_MOVE:
+mov 2(r1),r3                  ; r3 = posicao atual
+cmp r3, #0                    ; if r3 == 0
+beq DESTRUIR_ASTER            ; destroi o asteroide
+mov #' ',65506(r3)            ; limpa asteroide
+mov 4(r1),2(r1)               ; posicao_atual = nova_posicao
+mov 4(r1),r3                  ; r3 = posicao
+mov 6(r1),r4                  ; r4 = tipo
+jsr r7,TIPO_DO_ASTEROIDE      ; r4 = ascii do tipo
+mov r4,65506(r3)              ; desenha no visor o ascii do tipo na posicao
+mov 2(r1), 4(r1)              ; nova_posicao = posicao_atual
+sub #1, 4(r1)                 ; nova_posicao = nova_posicao - 1
+jmp TEST_LOOP                 ; repete para proximo asteroide
+
+JUMP_DRAW:
+jmp TEST_LOOP
+
+DESTRUIR_ASTER:
+jmp ASTER_APAGAR              ; destroi o asteroide
+
+ASTER_APAGAR:
+mov #0,0(r1)                  ; estado = 0
+mov 2(r1),r3                  ; r3 = posicao atual
+mov #' ',65506(r3)            ; limpa asteroide
+jmp TEST_LOOP                 ; repete para proximo asteroide
+
+TEST_LOOP: 
+sob r2, LOOP_ASTER_SHORT      ; repete loop ou sai fora
+jmp RETORNA_ASTER
+
+LOOP_ASTER_SHORT:   
+add #10,r1                    ; avanca 10 bytes em r1 para alcancar a proxima estrutura asteroides
+jmp LOOP_ASTER
+
+; ---
+ROTINA_TIMER:
+inc TICK                      ; para contar 1000 ms
+inc TICK_DRAW                 ; para contar 200 ms
+cmp TICK, #10
+beq TACK                      ; jmp if completou 1 segundo
+jmp RETORNA_TIMER
+
+TACK:
+inc TIMER                     ; incrementa 1 segundo
+clr TICK                      ; reseta contador 
+jmp RETORNA_TIMER
+
+; ---
+TIPO_DO_ASTEROIDE:
+cmp r4,#0                     ; r4 = tipo do asteroide    
+beq TIPO_1                    ; jmp if tipo == 0
+cmp r4,#1
+beq TIPO_2                    ; jmp if tipo == 1
+cmp r4,#2
+beq TIPO_3                    ; jmp if tipo == 2
+cmp r4,#3
+beq TIPO_4                    ; jmp if tipo == 3
+RETORNA_TIPO:
+rts r7
+TIPO_1:
+mov #49,r4
+jmp RETORNA_TIPO
+TIPO_2:
+mov #50,r4
+jmp RETORNA_TIPO
+TIPO_3:
+mov #51,r4
+jmp RETORNA_TIPO
+TIPO_4:
+mov #52,r4
+jmp RETORNA_TIPO
+
+; ---
+ROTINA_TECLADO:
+mov TECDT, r0                 ; r0 = buffer do teclado
+cmp r0, #'i'
+beq MAKE_GRANDE               ; jmp if tecla == i
+cmp r0, #'p'
+beq MAKE_GRANDE 
+cmp r0, #'a'
+beq MAKE_GRANDE
+cmp r0, #'d'
+beq MAKE_GRANDE
+cmp r0, #'I'
+beq SALVAR_TECLA
+cmp r0, #'P'
+beq SALVAR_TECLA
+cmp r0, #'A'
+beq SALVAR_TECLA
+cmp r0, #'D'
+beq SALVAR_TECLA
+cmp r0, #13
+beq SALVAR_TECLA              ; jmp if tecla == ENTER
+cmp r0, #' '
+beq SALVAR_TECLA              ; jmp if tecla == ' '
+jmp TECLA_ERROR               ; tecla invalida
+
+MAKE_GRANDE:
+sub #32,r0                    ; x + 32 = X
+jmp SALVAR_TECLA
+
+SALVAR_TECLA:
+mov r0, TECLA                 ; TECLA = BUFFER DO TECLADO
+jmp RETORNA_TECLADO
+
+TECLA_ERROR:
+mov #-1, TECLA                ; TECLA = -1
+jmp RETORNA_TECLADO
+
+; ---
+RETORNA:
+mov (r6)+,r5                  ; restaura r0-r5 da pilha
+mov (r6)+,r4
+mov (r6)+,r3
+mov (r6)+,r2
+mov (r6)+,r1
+mov (r6)+,r0
+
+rti

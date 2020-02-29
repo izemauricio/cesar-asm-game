@@ -1,0 +1,398 @@
+;> Inicializacao do apontador da pilha
+;> para que a pilha fique acima da area
+;> de memoria mapeada para entrada e saida
+;> ESTAS DUAS INSTRUCOES DEVEM SER MANTIDAS AQUI !
+          ORG 0                 ; primeira instrucao de qualquer 
+          MOV #65408,R6         ; programa: aponta SP para 65408
+;>---------------------------------------------------<
+;>>                                                 <<
+;>>>                                               <<<
+;>>>>                                             <<<<
+;>>>>> INSERIR AQUI O CODIGO DE SEU PROGRAMA !!! <<<<<
+;>>>>                                             <<<<
+;>>>                                               <<<
+;>>                                                 <<
+;>---------------------------------------------------<
+;
+;>---------------------------------------------------<
+;> AS SUBROTINAS DEVEM INICIAR SOMENTE APOS A ULTIMA <
+;> INSTRUCAO CODIFICADA NO PROGRAMA, QUE DEVE SER UM <
+;> HLT OU DESVIO INCONDICIONAL (JMP, BR OU RTS), OU  <
+;> APOS A AREA DE DEFINICAO DE DADOS DO PROGRAMA.    <
+;>						     <
+;> NÃO COLOCAR ESTAS SUBROTINAS APÓS A ROTINA DE     <
+;> TRATAMENTO DE INTERRUPÇÂO			     <
+;>---------------------------------------------------<
+;>
+;> Subrotina iterativa para "limpar" o visor (279 acessos)
+;>
+;> Chamada da subrotina:
+;>
+;> JSR R7,_S_LIMPA_VISOR_ITERATIVA
+;>
+          
+_S_LIMPA_VISOR_ITERATIVA:
+          MOV R0,-(R6)          ; salva R0 na pilha
+          MOV R1,-(R6)          ; salva R1 na pilha
+          MOV #65500,R1         ; move end. do visor p/R1
+          MOV #36,R0            ; move 36 para contador
+__OUTRO_LED:
+          CLR (R1)              ; limpa 1 LED do visor
+          INC R1                ; aponta p/LED seguinte
+          SOB R0,__OUTRO_LED    ; subtrai 1 do contador
+                                ; se <> 0, repete o laco
+          MOV (R6)+,R1          ; restaura R1
+          MOV (R6)+,R0          ; restaura R0
+          RTS R7                ; retorna ao ponto de chamada
+;>
+;>
+;> Subrotina rapida para "limpar" o visor (183 acessos)
+;>
+;> Chamada da subrotina:
+;>
+;> JSR R7,_S_LIMPA_VISOR_RAPIDA
+;>
+
+_S_LIMPA_VISOR_RAPIDA:
+          CLR 65500             ; limpa LED 00
+          CLR 65501             ; limpa LED 01
+          CLR 65502             ; limpa LED 02
+          CLR 65503             ; limpa LED 03
+          CLR 65504             ; limpa LED 04
+          CLR 65505             ; limpa LED 05
+          CLR 65506             ; limpa LED 06
+          CLR 65507             ; limpa LED 07
+          CLR 65508             ; limpa LED 08
+          CLR 65509             ; limpa LED 09
+          CLR 65510             ; limpa LED 10
+          CLR 65511             ; limpa LED 11
+          CLR 65512             ; limpa LED 12
+          CLR 65513             ; limpa LED 13
+          CLR 65514             ; limpa LED 14
+          CLR 65515             ; limpa LED 15
+          CLR 65516             ; limpa LED 16
+          CLR 65517             ; limpa LED 17
+          CLR 65518             ; limpa LED 18
+          CLR 65519             ; limpa LED 19
+          CLR 65520             ; limpa LED 20
+          CLR 65521             ; limpa LED 21
+          CLR 65522             ; limpa LED 22
+          CLR 65523             ; limpa LED 23
+          CLR 65524             ; limpa LED 24
+          CLR 65525             ; limpa LED 25
+          CLR 65526             ; limpa LED 26
+          CLR 65527             ; limpa LED 27
+          CLR 65528             ; limpa LED 28
+          CLR 65529             ; limpa LED 29
+          CLR 65530             ; limpa LED 30
+          CLR 65531             ; limpa LED 31
+          CLR 65532             ; limpa LED 32
+          CLR 65533             ; limpa LED 33
+          CLR 65534             ; limpa LED 34
+          CLR 65535             ; limpa LED 35
+          RTS R7                ; retorna ao ponto de chamada
+;>
+;>
+;> Subrotina "ultra rapida" "limpar" o visor (135 acessos)
+;>
+;> Chamada da subrotina:
+;>
+;> JSR R7,_S_LIMPA_VISOR_ULTRA
+;>
+
+_S_LIMPA_VISOR_ULTRA:
+          MOV R0,-(R6)          ; salva R0 na pilha
+          MOV R1,-(R6)          ; salva R1 na pilha
+          MOV #65500,R0         ; move end. do LED 0 do visor p/R1
+          MOV #65501,R1         ; move end. do LED 1 do visor p/R1
+          CLR (R0)+             ; limpa LED 00 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 01 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 02 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 03 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 04 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 05 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 06 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 07 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 08 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 09 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 10 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 11 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 12 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 13 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 14 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 15 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 16 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 17 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 18 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 19 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 20 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 21 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 22 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 23 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 24 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 25 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 26 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 27 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 28 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 29 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 30 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 31 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 32 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 33 do visor e soma 2 ao R1
+          CLR (R0)+             ; limpa LED 34 do visor e soma 2 ao R0
+          CLR (R1)+             ; limpa LED 35 do visor e soma 2 ao R1
+          MOV (R6)+,R1          ; restaura R1
+          MOV (R6)+,R0          ; restaura R0
+          RTS R7                ; retorna ao ponto de chamada
+;>
+;>
+;> Subrotina para "preencher" o visor com um caractere
+;>
+;> Chamada da subrotina:
+;>
+;> MOV #codASCII,R2             ; colocar no R2 o caractere a ser usado
+;> JSR R7,_S_PREENCHE_VISOR
+;>
+          
+_S_PREENCHE_VISOR:
+          MOV R0,-(R6)          ; salva R0 na pilha
+          MOV R1,-(R6)          ; salva R1 na pilha
+          MOV #65500,R1         ; move end. do visor p/R1
+          MOV #36,R0            ; move 36 para contador
+__MAIS1_LED:
+          MOV R2,(R1)           ; move caractere p/1 LED do visor
+          INC R1                ; aponta p/LED seguinte
+          SOB R0,__MAIS1_LED    ; subtrai 1 do contador
+                                ; se <> 0, repete o laco
+          MOV (R6)+,R1          ; restaura R1
+          MOV (R6)+,R0          ; restaura R0
+          RTS R7                ; retorna ao ponto de chamada
+;>
+;>
+;> Subrotina para escrever mensagem no visor
+;>
+;> Chamada da subrotina:
+;>
+;> MOV #tammensagem,R0          ; tamanho da mensagem (em caracteres)
+;> MOV #endmensagem,R1          ; endereco da mensagem a ser escrita no visor
+;> MOV #endvisor,R2             ; endereco do LED onde deve iniciar a mensagem
+;> JSR R7,_S_ESCREVER_NO_VISOR_V0
+;>
+
+_S_ESCREVER_NO_VISOR_V0:
+          MOV R3,-(R6)          ; salva R3 para usar na subrotina (V12 - 25/09/2014)
+__VOLTA_ESCR:
+          MOV (R1),R3           ; coloca 2 caracteres em R3
+          ASR R3                ; alinha primeiro caractere
+          ASR R3                ; a direita do registrador,
+          ASR R3                ; porque quando se escreve
+          ASR R3                ; na memoria a partir do
+          ASR R3                ; endereco 65500 apenas o byte
+          ASR R3                ; menos significativo e' escrito
+          ASR R3                ; na posicao correspondente
+          ASR R3                ; a um LED do visor
+          MOV R3,(R2)           ; move para o visor
+          SOB R0,__SEGUNDO      ; se ja moveu todo o texto,
+          MOV (R6)+,R3          ; restaura valor original do R3 (V12 - 25/09/2014)
+          RTS R7                ; retorna ao ponto de chamada
+                                ; senao, vai mover o segundo
+                                ; caractere da mesma palavra
+__SEGUNDO:
+          INC R2                ; aponta para proximo LED
+          BEQ __FIM_VISOR2      ; fim do visor - volta ao LED 00
+__CONTINUA2:
+          MOV (R1)+,R3          ; mesmos 2 caracteres em R3 e
+                                ; incrementa apontador do texto
+          MOV R3,(R2)           ; desta vez, move o segundo byte
+          SOB R0,__PROXIMO_LED  ; se ja moveu todo o texto,
+          MOV (R6)+,R3          ; restaura valor original do R3 (V12 - 25/09/2014)
+          RTS R7                ; retorna ao ponto de chamada
+
+__PROXIMO_LED:
+          INC R2                ; senao, aponta proximo LED
+          BNE __VOLTA_ESCR      ; e repete o laco
+                                ; fim do visor - volta ao LED 00
+__FIM_VISOR1:
+          MOV #65500,R2         ; aponta para primeiro LED
+          BR  __VOLTA_ESCR      ; volta a escrever no visor
+
+__FIM_VISOR2:
+          MOV #65500,R2         ; aponta para primeiro LED
+          BR  __CONTINUA2       ; volta a escrever no visor
+;>
+;>
+;> Subrotina para escrever mensagem no visor otimizada (V12 - 25/09/2014):
+;> 1. Nao faz deslocamentos para a direita para escrever byte mais significativo
+;>    porque busca palavras comecando em "endmensagem - 1" e escreve so o lsbyte
+;> 2. Escreve mensagem com tamanho variavel, encerrada com 1 byte com 0s
+;> 3. Comeca a escrever mensagem no LED indicado por seu indice, de 0 a 35
+;>
+;> Chamada da subrotina:
+;>
+;> MOV #endmensagem,R0          ; endereco da mensagem a ser escrita no visor
+;> MOV #indicevisor,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;> JSR R7,_S_ESCREVER_NO_VISOR
+;>
+;> Exemplo de uso:
+;>	MOV #msg,R0       ; endereco da mensagem a ser escrita no visor
+;>	MOV #0,R1          ; indice do LED onde deve iniciar a mensagem (0 a 35)
+;>	JSR R7,_S_ESCREVER_NO_VISOR
+;> :::::::::::::::::::::::::::::::::::::::::::::::::
+;> msg: DAB '* BibCesar.ced V. 12 -- 25/09/2014 *',0 ;<<< NOTAR O '0' APOS O TEXTO!!!
+;> 
+_S_ESCREVER_NO_VISOR:
+          ADD #65500,R1         ; transforma indice do LED em endereco de E/S no visor
+          MOV R3,-(R6)          ; salva R3 para usar na subrotina (V12 - 25/09/2014)
+__VOLTA_A_ESCREVER:
+          MOV -1(R0),R3         ; coloca 2 caracteres em R3, comecando em "endmensagem-1"
+          AND #255,R3           ; zera byte mais significativo da palavra lida
+          CMP R3,#0             ; testa se terminou mensagem (achou 1 byte com 0s binários)
+          BNE __ESCREVE_NO_LED  ; se nao terminou, vai exibir caractere lido
+          MOV (R6)+,R3          ; restaura valor original do R3
+          RTS R7                ; retorna ao ponto de chamada
+
+__ESCREVE_NO_LED:
+          MOV R3,(R1)           ; move para o visor
+          INC R0                ; aponta R0 para o proximo byte da mensagem
+          INC R1                ; aponta R1 para o proximo LED no visor
+          BEQ __FIM_VISOR       ; fim do visor - volta ao LED 00
+          BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+__FIM_VISOR:
+          MOV #65500,R1         ; aponta para primeiro LED
+          BR __VOLTA_A_ESCREVER ; volta a escrever no visor
+;>
+;>
+;> Subrotina para multiplicar 2 inteiros positivos de 16 bits
+;>
+;> Chamada da subrotina:
+;>
+;> MOV #multiplicando,R0        ; multiplicando no R0
+;> MOV #multiplicador,R1        ; multiplicador no R1
+;> JSR R7,_S_MULTIPLICAR
+;>
+;> No retorno da subrotina:
+;> - R0 contém os 16 msbits do produto
+;> - R1 contém os 16 lsbits do produto
+;> - Código de condição V:
+;>   V = 0 indica que a parte mais significativa do produto (R0) é zero
+;>   V = 1 indica que não é zero, ou seja: se for desprezada ocorre estouro
+;>
+_S_MULTIPLICAR:
+          MOV R2,-(R6)          ; salva R2 na pilha
+          MOV R3,-(R6)          ; salva R3 na pilha
+          MOV #16,R2            ; inicializa contador
+          CLR R3                ; limpa R3
+__INICIO_LACO: 
+          ROR R1                ; lsb do multiplicad. em C
+          BCC __NAO_SOMAR       ; se era zero, nao soma
+          ADD R0,R3             ; acumula multiplicando
+                                ; no produto parcial
+__NAO_SOMAR:
+          ROR R3                ; lsb de R3 vai para C
+          BCC __FIM_LACO        ; se era zero, sai do laco
+          ADD #32768,R1         ; soma 1 ao bit 15 de R1
+__FIM_LACO:
+          SOB R2,__INICIO_LACO  ; decrementa contador e
+                                ; repete se <> 0
+          MOV R3,R0             ; resultado de R3 para R0
+          MOV (R6)+,R3          ; restaura R3
+          MOV (R6)+,R2          ; restaura R2
+          TST R0                ; se R0 <> 0
+          BNE __ALERTA_ESTOURO  ; vai indicar estouro
+          CCC V                 ; senao, desliga V
+          RTS R7                ; retorna ao progr. princ.
+__ALERTA_ESTOURO:
+          SCC V                 ; liga indicador: estouro
+          RTS R7                ; retorna ao ponto de chamada
+;>
+;>
+;> Dividir int. positivo de 32 bits por um de 16 bits
+;>
+;> Chamada da subrotina:
+;>
+;> MOV #msbitsdividendo,R0      ; 16 bits mais significativos do dividendo
+;> MOV #lsbitsdividendo,R1      ; 16 bits menos significativos do dividendo
+;> MOV #divisor,R2              ; divisor (16 bits)
+;> JSR R7,_S_DIVIDIR
+;>
+;> No retorno da subrotina:
+;> - R0 contém o quociente (16 bits)
+;> - R1 contém o resto (16 bits)
+;> - R2 ainda contém o divisor, inalterado (16 bits)
+;> - Códigos de condição:
+;>   V = 1 indica que ocorreu estouro na divisão (quociente não cabe em 16 bits)
+;>   Z = 1 indica que ocorreu uma tentativa de divisão por zero
+;>   Nestes dois casos, R0, R1 e R2 não são alterados pela subrotina
+;>
+
+_S_DIVIDIR:
+          TST R2                ; testa divisor
+          BNE __NAO_ZERO        ; se <> zero, continua
+          CCC V                 ; indica divisao por zero
+          RTS R7                ; retorna ao ponto de chamada
+
+__NAO_ZERO:
+          CMP R0,R2             ; testa se dividendo(msb)
+                                ; e' >= que o divisor
+          BCC __INDICA_ESTOURO  ; se for, indicar estouro
+                                ; note: BCC equivale a um
+                                ; BGE para int. positivos
+;>
+          MOV R3,-(R6)          ; salva R3 na pilha
+          MOV R4,-(R6)          ; salva R4 na pilha
+          MOV R5,-(R6)          ; salva R5 na pilha
+          MOV R0,R3             ; copia dividendo para
+          MOV R1,R4             ; R3 e R4 (=q no final)
+          MOV #16,R5            ; inicializa contador
+          ASL R4                ; desloca dividendo p/a
+          ROL R3                ; esquerda e abre espaco
+          BCS __SUBTRAI_DIVISOR ; p/um bit do quociente
+          CMP R3,R2             ; se n+1 msbits do divid.
+          BCS __BIT_ZERO        ; maiores que divisor (= BLT p/inteiros positivos)
+__SUBTRAI_DIVISOR:
+          SUB R2,R3             ; subtrai divisor e
+          INC R4                ; ajusta bit do quociente
+__BIT_ZERO:
+          SOB R5,16             ; decr. R5; se <>0, repete
+          MOV R3,R1             ; copia resto para R1
+          MOV R4,R0             ; copia quociente p/R0
+          MOV (R6)+,R5          ; restaura
+          MOV (R6)+,R4          ; registradores
+          MOV (R6)+,R3          ; de trabalho
+          CCC V Z               ; limpa cod. de condicao
+          RTS R7                ; retorna ao ponto de chamada
+;>
+__INDICA_ESTOURO:
+          SCC V                 ; indica overflow e nao
+          CCC Z                 ; divisao por zero
+          RTS R7                ; retorna ao ponto de chamada
+
+;> Subrotina para encerrar a execução do programa (adicionada na V11 - 09/09/2014)
+;>
+;> Chamada da subrotina:
+;>
+;> JSR R7,_S_ENCERRAR
+;>
+
+_S_ENCERRAR:
+	MOV #36,R0                ; tamanho da mensagem (em caracteres)
+	MOV #__msgfim,R1          ; endereco da mensagem a ser escrita no visor
+	MOV #65500,R2             ; endereco do LED onde deve iniciar a mensagem
+	JSR R7,_S_ESCREVER_NO_VISOR_V0
+	HLT
+__msgfim: dab '** Execucao do programa encerrada **'
+;>
+;> Identificacao da versao da biblioteca - e' exibida no visor
+;>
+          ORG 65500             ; ajusta endereco de inicio (LED 00 do visor)
+          DAB '* BibCesar.ced V. 14 -- 10/09/2015 *'
+;>
+;> A versao 9 incorporou um subrotina para preencher o visor
+;> com um mesmo caractere, cujo codigo ASCII e' passado no R2.
+;> A versão 10 incorporou a subrotina "ultra rapida" para limpar o visor.
+;> A versão 11 incorporou a subrotina para encerramento do programa, que
+;> tem por objetivo simular uma devolução do controle ao sistema operacional.
+;> A versão 12 incorporou o salvamento/restauração do o R3 usado na sub-rotina
+;> _S_ESCREVER_NO_VISOR_V0 e adicionou uma versao otimizada desta (_S_ESCREVER_NO_VISOR).
+;> A versão 13 corrige um erro na sub-rotina para encerrar a execução do programa.
+;> A versão 14 coloca a pilha antes da área reservada para E/S (endereços de byte)
