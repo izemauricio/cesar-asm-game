@@ -4,8 +4,8 @@ Asteroid game implemented in assembly for the hypothetical cesar cpu
 
 ## Notes
 
-mov origem, destino\
-mov direto, imediato e indexado usam 1 palavra (2 bytes) a mais por instrução\
+mov origem, destino<br>
+mov direto, imediato e indexado usam 1 palavra (2 bytes) a mais por instrução<br>
 
 
 ### instruction size
