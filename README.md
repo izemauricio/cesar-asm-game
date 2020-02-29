@@ -15,13 +15,13 @@ Byte 0: add r7 r0\
 Byte 1:\
 Byte 2: 0\
 Byte 3: 10\
-<br\>
+<br><br>
 ADD #10, #20 = add (r7)+,(r7)+ = 6 bytes\
-<br\>
-1 byte = HLT, SCC, CCC\
-2 byte = desvios\
-4 byte = JMP, ...\
-
+<br><br>
+1 byte = HLT, SCC, CCC<br>
+2 byte = desvios<br>
+4 byte = JMP, ...<br>
+<br>
 ### controle de laço
 
 - SOB r0, 10\
